@@ -1,0 +1,23 @@
+{
+    "compilerOptions": {
+        "declaration": true,
+        "module": "commonjs",
+        "outDir": "dist/",
+        "sourceMap": true,
+        "target": "es6"
+    },
+    "buildOnSave": false,
+    "compileOnSave": false,
+    "exclude": [
+        "dist",
+        "node_modules"
+    ],
+    "filesGlob": [
+        "src/**/*.ts",
+        "typings/index.d.ts",
+        "!./node_modules/**/*.ts"
+    ],
+    "atom": {
+        "rewriteTsconfig": false
+    }
+}

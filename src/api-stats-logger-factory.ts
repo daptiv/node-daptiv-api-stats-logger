@@ -1,7 +1,7 @@
 'use strict';
-import { MetricsKeyBuilder } from './metrics-key-builder';
+import { ApiStatKeyBuilder } from './api-stat-key-builder';
 import { Server, RouteSpec, Response, Request, Route } from 'restify';
-import { DaptivMetricsLogger } from 'daptiv-metrics-logger';
+import { DaptivStatsLogger } from 'node-daptiv-stats-logger';
 
 /**
  * tuple of [seconds, nanoseconds]
@@ -10,18 +10,18 @@ type HighResolutionTime = [number, number];
 
 export const DEFAULT_KEY_NAME: string = 'handler-0';
 
-export function registerHandledRouteTimingMetrics(server: Server, metricsLogger: DaptivMetricsLogger) {
-  // A logger and metricsKeyBuilder should NOT be created here, they should be provided by the caller.
-    let metricsKeyBuilder: MetricsKeyBuilder = new MetricsKeyBuilder();
-    let apiMetricsLogger = new ApiMetricsLoggerFactory(metricsLogger, metricsKeyBuilder).createLogger();
+export function registerHandledRouteTimingMetrics(server: Server, statsLogger: DaptivStatsLogger) {
+  // A logger and apiStatKeyBuilder should NOT be created here, they should be provided by the caller.
+    let apiStatKeyBuilder = new ApiStatKeyBuilder();
+    let apiMetricsLogger = new ApiStatsLoggerFactory(statsLogger, apiStatKeyBuilder).createLogger();
 
     server.on('after', (request: Request, response: Response, route: Route, error) => {
         apiMetricsLogger(request, response, route);
     });
 }
 
-export class ApiMetricsLoggerFactory {
-    constructor(private metricsLogger: DaptivMetricsLogger, private metricsKeyBuilder: MetricsKeyBuilder) {}
+export class ApiStatsLoggerFactory {
+    constructor(private statsLogger: DaptivStatsLogger, private apiStatKeyBuilder: ApiStatKeyBuilder) {}
 
     createLogger() {
         return (request: Request, response: Response, route: Route) => {
@@ -38,10 +38,10 @@ export class ApiMetricsLoggerFactory {
             }
 
             let routeSpec: RouteSpec = route && route.spec;
-            let key: string = this.metricsKeyBuilder.fromRouteSpecAndStatus(routeSpec, response.statusCode);
+            let key: string = this.apiStatKeyBuilder.fromRouteSpecAndStatus(routeSpec, response.statusCode);
             let time = this.toMilliseconds(timer.time);
             if (time) {
-                this.metricsLogger.timing(key, time);
+                this.statsLogger.timing(key, time);
             }
 
             // TODO: increment success and failure (4XX, 5XX)

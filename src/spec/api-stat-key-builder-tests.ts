@@ -1,12 +1,13 @@
-import { MetricsKeyBuilder } from '../metrics-key-builder';
+'use strict';
+import { ApiStatKeyBuilder } from '../api-stat-key-builder';
 import { RouteSpec } from 'restify';
 
 try {
-describe('MetricsKeyBuilder', () => {
-    let builder: MetricsKeyBuilder;
+  describe('ApiStatKeyBuilder', () => {
+    let builder: ApiStatKeyBuilder;
 
     beforeEach(() => {
-        builder = new MetricsKeyBuilder();
+        builder = new ApiStatKeyBuilder();
     });
 
     describe('fromUrlAndStatus', () => {
@@ -23,7 +24,7 @@ describe('MetricsKeyBuilder', () => {
         });
 
         it('should append statusCode if it exists', () => {
-            expect(builder.fromUrlAndStatus('http://daptiv.com/page.html.tmpl', 200)).toEqual('page_html_tmpl.200');
+            expect(builder.fromUrlAndStatus('http://daptiv.com/page.html.tmpl', 200)).toEqual('page_html_tmpl.2XX');
         });
 
         it('should not append statusCode if it does not exist', () => {
@@ -33,7 +34,8 @@ describe('MetricsKeyBuilder', () => {
 
     describe('fromRouteSpecAndStatus', () => {
         let routeSpec: RouteSpec;
-        const statusCode: number = 200;
+        const statusCode = 500;
+        const expectedStatusCodeKey = '5XX';
 
         beforeEach(() => {
             routeSpec = {
@@ -49,31 +51,31 @@ describe('MetricsKeyBuilder', () => {
         });
 
         it('should remove the leading / before processing path', () => {
-            expect(builder.fromRouteSpecAndStatus(routeSpec, statusCode)).toEqual(`tasks.${statusCode}`);
+            expect(builder.fromRouteSpecAndStatus(routeSpec, statusCode)).toEqual(`tasks.${expectedStatusCodeKey}`);
         });
 
         it('should convert . in path to _', () => {
             routeSpec.path = '/tasks.flagged';
-            expect(builder.fromRouteSpecAndStatus(routeSpec, statusCode)).toEqual(`tasks_flagged.${statusCode}`);
+            expect(builder.fromRouteSpecAndStatus(routeSpec, statusCode)).toEqual(`tasks_flagged.${expectedStatusCodeKey}`);
         });
 
         it('should convert : in path to _', () => {
             routeSpec.path = '/tasks:flagged';
-            expect(builder.fromRouteSpecAndStatus(routeSpec, statusCode)).toEqual(`tasks_flagged.${statusCode}`);
+            expect(builder.fromRouteSpecAndStatus(routeSpec, statusCode)).toEqual(`tasks_flagged.${expectedStatusCodeKey}`);
         });
 
         it('should convert / in path to .', () => {
             routeSpec.path = '/tasks/flagged';
-            expect(builder.fromRouteSpecAndStatus(routeSpec, statusCode)).toEqual(`tasks.flagged.${statusCode}`);
+            expect(builder.fromRouteSpecAndStatus(routeSpec, statusCode)).toEqual(`tasks.flagged.${expectedStatusCodeKey}`);
         });
 
         it('should append lowercased method when method is defined', () => {
             routeSpec.method = 'GET';
-            expect(builder.fromRouteSpecAndStatus(routeSpec, statusCode)).toEqual(`tasks.get.${statusCode}`);
+            expect(builder.fromRouteSpecAndStatus(routeSpec, statusCode)).toEqual(`tasks.get.${expectedStatusCodeKey}`);
         });
 
         it('should append statusCode if it exists', () => {
-            expect(builder.fromRouteSpecAndStatus(routeSpec, statusCode)).toEqual(`tasks.${statusCode}`);
+            expect(builder.fromRouteSpecAndStatus(routeSpec, statusCode)).toEqual(`tasks.${expectedStatusCodeKey}`);
         });
 
         it('should not append statusCode if it does not exist', () => {
@@ -85,6 +87,7 @@ describe('MetricsKeyBuilder', () => {
             let setPath = (regExpPath: RegExp) => {
                 routeSpec.path = <any>regExpPath;
             };
+
             it(`should prepend key with '${prefix}'`, () => {
                 setPath(/path/);
 
@@ -92,11 +95,12 @@ describe('MetricsKeyBuilder', () => {
 
                 expect(key.startsWith(prefix)).toBeTruthy(`"${key}" should start with "${prefix}"`);
             });
+
             it('should strip / from start and end of expression', () => {
                 setPath(/path/);
 
                 let key = builder.fromRouteSpecAndStatus(routeSpec, statusCode);
-                let expected = prefix + 'path.' + statusCode;
+                let expected = prefix + 'path.' + expectedStatusCodeKey;
                 expect(key).toEqual(expected);
             });
 
@@ -104,7 +108,7 @@ describe('MetricsKeyBuilder', () => {
                 setPath(/\/some\/test\/path/);
 
                 let key = builder.fromRouteSpecAndStatus(routeSpec, statusCode);
-                let expected = prefix + 'some.test.path.' + statusCode;
+                let expected = prefix + 'some.test.path.' + expectedStatusCodeKey;
                 expect(key).toEqual(expected);
             });
 
@@ -112,7 +116,7 @@ describe('MetricsKeyBuilder', () => {
                 setPath(/some\/test\/path\//);
 
                 let key = builder.fromRouteSpecAndStatus(routeSpec, statusCode);
-                let expected = prefix + 'some.test.path.'  + statusCode;
+                let expected = prefix + 'some.test.path.'  + expectedStatusCodeKey;
                 expect(key).toEqual(expected);
             });
 
@@ -120,7 +124,7 @@ describe('MetricsKeyBuilder', () => {
                 setPath(/test\/path/);
 
                 let key = builder.fromRouteSpecAndStatus(routeSpec, statusCode);
-                let expected = prefix + 'test.path.' + statusCode;
+                let expected = prefix + 'test.path.' + expectedStatusCodeKey;
                 expect(key).toEqual(expected);
             });
 
@@ -128,7 +132,7 @@ describe('MetricsKeyBuilder', () => {
                 setPath(/test\.path/);
 
                 let key = builder.fromRouteSpecAndStatus(routeSpec, statusCode);
-                let expected = prefix + 'test_path.' + statusCode;
+                let expected = prefix + 'test_path.' + expectedStatusCodeKey;
                 expect(key).toEqual(expected);
             });
 
@@ -136,7 +140,7 @@ describe('MetricsKeyBuilder', () => {
                 setPath(/test.ed\.path/);
 
                 let key = builder.fromRouteSpecAndStatus(routeSpec, statusCode);
-                let expected = prefix + 'test_ed_path.' + statusCode;
+                let expected = prefix + 'test_ed_path.' + expectedStatusCodeKey;
                 expect(key).toEqual(expected);
             });
 
@@ -144,7 +148,7 @@ describe('MetricsKeyBuilder', () => {
                 setPath(/test:path/);
 
                 let key = builder.fromRouteSpecAndStatus(routeSpec, statusCode);
-                let expected = prefix + 'test_path.' + statusCode;
+                let expected = prefix + 'test_path.' + expectedStatusCodeKey;
                 expect(key).toEqual(expected);
             });
 
@@ -152,7 +156,7 @@ describe('MetricsKeyBuilder', () => {
                 setPath(/test\wthis\/path/);
 
                 let key = builder.fromRouteSpecAndStatus(routeSpec, statusCode);
-                let expected = prefix + 'test_this.path.' + statusCode;
+                let expected = prefix + 'test_this.path.' + expectedStatusCodeKey;
                 expect(key).toEqual(expected);
             });
 
@@ -161,7 +165,7 @@ describe('MetricsKeyBuilder', () => {
 
                 let key = builder.fromRouteSpecAndStatus(routeSpec, statusCode);
 
-                let expected = prefix + 'v1._Tt_est_this__.path._param.'  + statusCode;
+                let expected = prefix + 'v1._Tt_est_this__.path._param.'  + expectedStatusCodeKey;
                 expect(key).toEqual(expected);
             });
         });

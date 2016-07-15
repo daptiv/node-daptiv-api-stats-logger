@@ -1,27 +1,23 @@
 'use strict';
-import * as metricsLogger from '../metrics-logger';
-import { MetricsKeyBuilder } from '../metrics-key-builder';
-import { StatsDOptions } from '../statsd';
+import * as metricsLogger from '../api-stats-logger-factory';
+import { ApiStatKeyBuilder } from '../api-stat-key-builder';
 import { Route, RouteSpec } from 'restify';
 
-describe('metrics-logger', () => {
+describe('ApiStatsLoggerFactory', () => {
     let serverSpy = jasmine.createSpyObj('server', ['on']);
-    let statsDOptions: StatsDOptions = {
-        host: 'test.test.com'
-    };
     let serverOnSpy: jasmine.Spy;
     let logger;
-    let statsDSpy;
-    let metricsKeyBuilder = new MetricsKeyBuilder();
+    let daptivMetricsLoggerSpy;
+    let metricsKeyBuilder = new ApiStatKeyBuilder();
     let mockRequest = jasmine.createSpyObj('mockRequest', ['']);
     let mockResponse = jasmine.createSpyObj('mockResponse', ['']);
     let mockRoute = <Route>{};
     let routeSpec: RouteSpec;
 
     beforeEach(() => {
-        statsDSpy = jasmine.createSpyObj('statsDSpy', ['timing']);
-        metricsLogger.registerHandledRouteTimingMetrics(serverSpy, statsDOptions);
-        logger = new metricsLogger.MetricsLogFactory(statsDSpy, metricsKeyBuilder).createLogger();
+        daptivMetricsLoggerSpy = jasmine.createSpyObj('daptivMetricsLoggerSpy', ['timing']);
+        metricsLogger.registerHandledRouteTimingMetrics(serverSpy, daptivMetricsLoggerSpy);
+        logger = new metricsLogger.ApiStatsLoggerFactory(daptivMetricsLoggerSpy, metricsKeyBuilder).createLogger();
         mockResponse.statusCode = 200;
         routeSpec = {
             path: '/tasks',
@@ -42,7 +38,7 @@ describe('metrics-logger', () => {
 
         logger(mockRequest, mockResponse, mockRoute);
 
-        expect(statsDSpy.timing).not.toHaveBeenCalled();
+        expect(daptivMetricsLoggerSpy.timing).not.toHaveBeenCalled();
     });
 
     it('when request timer is available for route should record time for route', () => {
@@ -51,7 +47,7 @@ describe('metrics-logger', () => {
 
         logger(mockRequest, mockResponse, mockRoute);
 
-        expect(statsDSpy.timing).toHaveBeenCalledWith('tasks.200', jasmine.any(Number));
+        expect(daptivMetricsLoggerSpy.timing).toHaveBeenCalledWith('tasks.2XX', jasmine.any(Number));
     });
 
     describe('metrics timer\'s time', () => {
@@ -61,7 +57,7 @@ describe('metrics-logger', () => {
 
             logger(mockRequest, mockResponse, mockRoute);
 
-            expect(statsDSpy.timing).toHaveBeenCalledWith(jasmine.any(String), 5000);
+            expect(daptivMetricsLoggerSpy.timing).toHaveBeenCalledWith(jasmine.any(String), 5000);
         });
 
         it('should be converted (seconds & ns) to ms', () => {
@@ -70,7 +66,7 @@ describe('metrics-logger', () => {
 
             logger(mockRequest, mockResponse, mockRoute);
 
-            expect(statsDSpy.timing).toHaveBeenCalledWith(jasmine.any(String), 5002);
+            expect(daptivMetricsLoggerSpy.timing).toHaveBeenCalledWith(jasmine.any(String), 5002);
         });
 
         it('should be converted (ns only) to ms', () => {
@@ -79,7 +75,7 @@ describe('metrics-logger', () => {
 
             logger(mockRequest, mockResponse, mockRoute);
 
-            expect(statsDSpy.timing).toHaveBeenCalledWith(jasmine.any(String), 1.000010);
+            expect(daptivMetricsLoggerSpy.timing).toHaveBeenCalledWith(jasmine.any(String), 1.000010);
         });
     });
 });

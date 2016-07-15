@@ -1,2 +1,2 @@
-export * from './metrics-key-builder';
-export * from './metrics-logger';
+export * from './api-stat-key-builder';
+export * from './api-stats-logger-factory';

@@ -1,6 +1,6 @@
 {
   "name": "node-daptiv-api-stats-logger",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "",
   "main": "dist/index.js",
   "typings": "dist/index.d.ts",
@@ -39,8 +39,7 @@
     "url": "https://github.com/daptiv/node-daptiv-api-stats-logger/issues"
   },
   "homepage": "https://github.com/daptiv/node-daptiv-api-stats-logger#readme",
-  "dependencies": {
-  },
+  "dependencies": {},
   "devDependencies": {
     "conventional-changelog-cli": "^1.1.1",
     "node-daptiv-stats-logger": "^0.1.0",

@@ -43,7 +43,7 @@
   },
   "devDependencies": {
     "conventional-changelog-cli": "^1.1.1",
-    "node-daptiv-stats-logger": "^0.0.3",
+    "node-daptiv-stats-logger": "^0.1.0",
     "gulp": "^3.9.1",
     "gulp-jasmine": "^2.3.0",
     "gulp-plumber": "^1.1.0",
